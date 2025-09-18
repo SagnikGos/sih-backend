@@ -1,29 +1,50 @@
 import { Schema, model, Document } from 'mongoose';
 
-
-export interface IIssue extends Document {
-  title: string;
-  description: string;
-  geotag: string;
-  imageUrls: string[];
-  status: 'Reported' | 'In Progress' | 'Resolved';
-  timestamp: Date;
+export interface IAssignedTo {
+  id: string;
+  name: string;
+  area: string;
 }
 
-// change this when we have the frontend -- sagnik
+export interface IIssue extends Document {
+  id: string;
+  description: string;
+  type: string;
+  images: string[];
+  audio?: string;
+  geotag: string;
+  datetime: Date;
+  priority?: 'high' | 'medium' | 'low';
+  status: 'pending' | 'assigned' | 'processing' | 'resolved';
+  assignedTo?: IAssignedTo;
+}
+
+const AssignedToSchema = new Schema<IAssignedTo>({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  area: { type: String, required: true }
+}, { _id: false });
+
 const IssueSchema = new Schema<IIssue>({
-  title: { type: String, required: true },
+  id: { type: String, required: true, unique: true },
   description: { type: String, required: true },
+  type: { type: String, required: true },
+  images: [{ type: String, default: [] }],
+  audio: { type: String },
   geotag: { type: String, required: true },
-  imageUrls: [{ type: String, required: true }],
+  datetime: { type: Date, default: Date.now },
+  priority: {
+    type: String,
+    enum: ['high', 'medium', 'low'],
+    default: null
+  },
   status: {
     type: String,
-    enum: ['Reported', 'In Progress', 'Resolved'],
-    default: 'Reported',
+    enum: ['pending', 'assigned', 'processing', 'resolved'],
+    default: 'pending'
   },
-  timestamp: { type: Date, default: Date.now },
+  assignedTo: { type: AssignedToSchema }
 });
-
 
 const Issue = model<IIssue>('Issue', IssueSchema);
 export default Issue;
