@@ -65,7 +65,11 @@ Coordinates (40.8000, -74.1000) → New API request
 ### Key Functions
 - `enforceRateLimit()`: Ensures 1 request per second maximum
 - `createCacheKey()`: Groups nearby coordinates for efficient caching
+- `directNominatimRequest()`: Direct HTTP fallback with proper headers
 - `getOSMAttribution()`: Returns required attribution text
+- `getDetailedAttribution()`: Returns detailed attribution information
+- `clearGeocodingCache()`: Clears the geocoding cache
+- `getCacheStats()`: Returns cache statistics
 - `reverseGeocode()`: Main geocoding function with compliance features
 
 ## 📝 API Response Format
@@ -91,7 +95,13 @@ All geocoding-related API responses now include attribution:
 ## 🚀 Usage Example
 
 ```typescript
-import { reverseGeocode, getOSMAttribution } from './services/geocoder.js';
+import { 
+  reverseGeocode, 
+  getOSMAttribution, 
+  getDetailedAttribution,
+  clearGeocodingCache,
+  getCacheStats 
+} from './services/geocoder.js';
 
 // This will automatically handle rate limiting and caching
 const result = await reverseGeocode(40.7128, -74.0060);
@@ -99,6 +109,53 @@ console.log(result.placeName); // "New York, NY"
 
 // Get attribution for display
 console.log(getOSMAttribution()); // "© OpenStreetMap contributors"
+console.log(getDetailedAttribution()); // "Geocoding data © OpenStreetMap contributors, licensed under ODbL"
+
+// Cache management
+const stats = getCacheStats();
+console.log(`Cache has ${stats.size} entries`);
+
+// Clear cache if needed
+clearGeocodingCache();
+```
+
+## 🧪 Testing
+
+### Test Scripts
+- `test_geocoding.js`: Tests the main geocoding functionality
+- `test_direct_http.js`: Tests direct HTTP requests to verify User-Agent headers
+
+### Running Tests
+```bash
+# Build the project first
+npm run build
+
+# Test the geocoding service
+node test_geocoding.js
+
+# Test direct HTTP requests
+node test_direct_http.js
+```
+
+## 🔧 Troubleshooting
+
+### If you still get 403 Forbidden errors:
+
+1. **Check User-Agent**: The direct HTTP fallback ensures proper headers
+2. **Verify Rate Limiting**: Ensure you're not making requests too quickly
+3. **Clear Cache**: Use `clearGeocodingCache()` to reset cached results
+4. **Check IP Blocking**: Your IP might be temporarily blocked from previous violations
+
+### Debug Steps:
+```typescript
+// Check cache stats
+console.log(getCacheStats());
+
+// Clear cache and try again
+clearGeocodingCache();
+
+// Test with a single coordinate
+const result = await reverseGeocode(40.7128, -74.0060);
 ```
 
 This implementation ensures full compliance with OSM Nominatim API rules while providing efficient geocoding services for your application.
