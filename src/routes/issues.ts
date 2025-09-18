@@ -1,8 +1,7 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import { put } from '@vercel/blob';
 import Issue from '../models/Issue.js';
 import { CreateIssueBodySchema } from '../schemas/issue.schema.js';
 import { validateBody } from '../middleware/validation.js';
@@ -10,24 +9,9 @@ import { validateBody } from '../middleware/validation.js';
 const router = express.Router();
 
 
-const uploadDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-    cb(null, filename);
-  },
-});
-
-const upload = multer({ 
-  storage,
+// ✅ Use memory storage instead of disk storage for Vercel Blob
+const upload = multer({
+  storage: multer.memoryStorage(), // Use memoryStorage instead of diskStorage
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('audio/')) {
       cb(null, true);
@@ -71,10 +55,34 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', uploader, parseAssignedTo, validateBody(CreateIssueBodySchema), async (req: Request, res: Response) => {
   try {
     const files = req.files as { images?: Express.Multer.File[], audio?: Express.Multer.File[] };
+    let imageUrls = [];
+    let audioUrl;
 
-    const imageUrls = files.images?.map(file => `/uploads/${file.filename}`) || [];
-    const audioUrl = files.audio?.[0] ? `/uploads/${files.audio[0].filename}` : undefined;
+    // --- Upload images to Vercel Blob ---
+    if (files.images && files.images.length > 0) {
+      for (const file of files.images) {
+        const blob = await put(file.originalname, file.buffer, {
+          access: 'public',
+        });
+        imageUrls.push(blob.url); // Add the public URL from Vercel
+      }
+    }
 
+    // --- Upload audio to Vercel Blob ---
+    if (files.audio && files.audio.length > 0) {
+      const audioFile = files.audio[0];
+      if (audioFile) {
+        const blob = await put(audioFile.originalname, audioFile.buffer, {
+          access: 'public',
+        });
+        audioUrl = blob.url; // Get the public URL
+      }
+    }
+
+    console.log('🔴 Processed imageUrls from Vercel Blob:', imageUrls);
+    console.log('🔴 Processed audioUrl from Vercel Blob:', audioUrl);
+
+    // Now, save these new URLs to your database as before
     const newIssueData = {
       id: uuidv4(),
       ...req.body,
@@ -84,9 +92,9 @@ router.post('/', uploader, parseAssignedTo, validateBody(CreateIssueBodySchema),
     };
     
     const newIssue = new Issue(newIssueData);
-
     await newIssue.save();
     res.status(201).json(newIssue);
+
   } catch (error) {
     console.error('Error creating issue:', error);
     res.status(500).json({ message: 'Server error while creating issue.' });

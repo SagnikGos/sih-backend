@@ -1,13 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
 import issuesRouter from './routes/issues.js';
 import { connectDB } from './config/db.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -23,7 +18,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static file serving removed - files are now served from Vercel Blob CDN
 
 app.use('/api/v1/issues', issuesRouter);
 
