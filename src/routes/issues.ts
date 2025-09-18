@@ -40,6 +40,18 @@ const parseAssignedTo = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Middleware to parse geotag JSON string
+const parseGeotag = (req: Request, res: Response, next: NextFunction) => {
+  if (req.body.geotag && typeof req.body.geotag === 'string') {
+    try {
+      req.body.geotag = JSON.parse(req.body.geotag);
+    } catch (error) {
+      return res.status(400).json({ message: 'Invalid geotag JSON format' });
+    }
+  }
+  next();
+};
+
 // GET /api/v1/issues - Get all issues
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -53,7 +65,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 
 // POST /api/v1/issues - Create new issue
-router.post('/', uploader, parseAssignedTo, validateBody(CreateIssueBodySchema), async (req: Request, res: Response) => {
+router.post('/', uploader, parseAssignedTo, parseGeotag, validateBody(CreateIssueBodySchema), async (req: Request, res: Response) => {
   try {
     const files = req.files as { images?: Express.Multer.File[], audio?: Express.Multer.File[] };
     let imageUrls = [];
