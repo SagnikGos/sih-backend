@@ -5,7 +5,7 @@ import { put } from '@vercel/blob';
 import Issue from '../models/Issue.js';
 import { CreateIssueBodySchema } from '../schemas/issue.schema.js';
 import { validateBody } from '../middleware/validation.js';
-import { reverseGeocode } from '../services/geocoder.js';
+import { reverseGeocode, getOSMAttribution } from '../services/geocoder.js';
 
 const router = express.Router();
 
@@ -56,7 +56,11 @@ const parseGeotag = (req: Request, res: Response, next: NextFunction) => {
 router.get('/', async (req: Request, res: Response) => {
   try {
     const issues = await Issue.find().sort({ datetime: -1 });
-    res.status(200).json(issues);
+    const responseData = {
+      issues,
+      attribution: getOSMAttribution()
+    };
+    res.status(200).json(responseData);
   } catch (error) {
     res.status(500).json({ message: 'Server error fetching issues.' });
   }
@@ -128,7 +132,14 @@ router.post('/', uploader, parseAssignedTo, parseGeotag, validateBody(CreateIssu
     
     const newIssue = new Issue(newIssueData);
     await newIssue.save();
-    res.status(201).json(newIssue);
+    
+    // Include OSM attribution in the response
+    const responseData = {
+      ...newIssue.toObject(),
+      attribution: getOSMAttribution()
+    };
+    
+    res.status(201).json(responseData);
 
   } catch (error) {
     console.error('Error creating issue:', error);
