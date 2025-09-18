@@ -46,6 +46,7 @@ const parseGeotag = (req: Request, res: Response, next: NextFunction) => {
   }
   next();
 };
+
 router.get('/', async (req: Request, res: Response) => {
   try {
     const issues = await Issue.find().sort({ datetime: -1 });
@@ -58,6 +59,24 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error fetching issues.' });
   }
 });
+
+// ✅ New route to fetch a single issue by UUID
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const issue = await Issue.findOne({ id: req.params.id });
+    if (!issue) {
+      return res.status(404).json({ message: 'Issue not found.' });
+    }
+    const responseData = {
+      ...issue.toObject(),
+      attribution: getOSMAttribution()
+    };
+    res.status(200).json(responseData);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error fetching issue.' });
+  }
+});
+
 router.post('/', uploader, parseAssignedTo, parseGeotag, validateBody(CreateIssueBodySchema), async (req: Request, res: Response) => {
   try {
     const files = req.files as { images?: Express.Multer.File[], audio?: Express.Multer.File[] };
