@@ -12,17 +12,13 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 
 const corsOptions = {
-  origin: true, // Allow all origins
+  origin: true,
   credentials: true
 };
 
 app.use(cors(corsOptions));
-
-
-
 app.use('/api/v1/issues', issuesRouter);
 
-// For local development, start the server
 if (process.env.NODE_ENV !== 'production') {
   connectDB().then(() => {
     app.listen(PORT, () => {
@@ -31,5 +27,4 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// ✅ Export the app for Vercel serverless deployment
 export default connectDB().then(() => app);

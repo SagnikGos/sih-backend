@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// I used zod.. I am cool right?
 export const CreateIssueSchema = z.object({
   id: z.string().optional(), 
   description: z.string().min(1, 'Description is required'),
@@ -10,7 +9,7 @@ export const CreateIssueSchema = z.object({
   geotag: z.object({
     lat: z.number().min(-90).max(90, 'Latitude must be between -90 and 90'),
     lng: z.number().min(-180).max(180, 'Longitude must be between -180 and 180'),
-    placeName: z.string().optional() // This will be populated by reverse geocoding
+    placeName: z.string().optional()
   }),
   datetime: z.date().optional(), 
   priority: z.enum(['high', 'medium', 'low']).optional(),
@@ -21,7 +20,6 @@ export const CreateIssueSchema = z.object({
     area: z.string()
   }).optional()
 });
-
 
 export const CreateIssueBodySchema = CreateIssueSchema.omit({ 
   images: true, 
