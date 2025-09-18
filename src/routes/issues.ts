@@ -5,6 +5,7 @@ import { put } from '@vercel/blob';
 import Issue from '../models/Issue.js';
 import { CreateIssueBodySchema } from '../schemas/issue.schema.js';
 import { validateBody } from '../middleware/validation.js';
+import { reverseGeocode } from '../services/geocoder.js';
 
 const router = express.Router();
 
@@ -82,10 +83,32 @@ router.post('/', uploader, parseAssignedTo, validateBody(CreateIssueBodySchema),
     console.log('🔴 Processed imageUrls from Vercel Blob:', imageUrls);
     console.log('🔴 Processed audioUrl from Vercel Blob:', audioUrl);
 
+    // --- Reverse geocoding for place name ---
+    let geotagWithPlaceName = { ...req.body.geotag };
+    
+    if (req.body.geotag && req.body.geotag.lat && req.body.geotag.lng) {
+      try {
+        const geocoderResult = await reverseGeocode(req.body.geotag.lat, req.body.geotag.lng);
+        if (geocoderResult) {
+          geotagWithPlaceName.placeName = geocoderResult.placeName;
+          console.log('🔴 Reverse geocoded place name:', geocoderResult.placeName);
+        } else {
+          // Fallback to coordinates if geocoding fails
+          geotagWithPlaceName.placeName = `${req.body.geotag.lat}, ${req.body.geotag.lng}`;
+          console.log('🔴 Geocoding failed, using coordinates as place name');
+        }
+      } catch (geocodingError) {
+        console.error('Error during reverse geocoding:', geocodingError);
+        // Fallback to coordinates if geocoding fails
+        geotagWithPlaceName.placeName = `${req.body.geotag.lat}, ${req.body.geotag.lng}`;
+      }
+    }
+
     // Now, save these new URLs to your database as before
     const newIssueData = {
       id: uuidv4(),
       ...req.body,
+      geotag: geotagWithPlaceName,
       images: imageUrls,
       audio: audioUrl,
       datetime: new Date(),
