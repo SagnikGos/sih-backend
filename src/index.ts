@@ -18,13 +18,18 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Static file serving removed - files are now served from Vercel Blob CDN
+
 
 app.use('/api/v1/issues', issuesRouter);
 
-
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running on ${BASE_URL}`);
+// For local development, start the server
+if (process.env.NODE_ENV !== 'production') {
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server is running on ${BASE_URL}`);
+    });
   });
-});
+}
+
+// ✅ Export the app for Vercel serverless deployment
+export default connectDB().then(() => app);

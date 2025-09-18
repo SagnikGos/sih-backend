@@ -43,6 +43,19 @@ BLOB_READ_WRITE_TOKEN=your_vercel_blob_token_here
 2. Deploy your project
 3. Test file uploads - they should now work on Vercel!
 
+## Important: Serverless Export
+
+
+```typescript
+// ✅ Export the app for Vercel serverless deployment
+export default connectDB().then(() => app);
+```
+
+This ensures:
+- The database connection is established before handling requests
+- Vercel can properly route requests to your Express app
+- No `app.listen()` is called in production (Vercel handles this)
+
 ## Benefits
 
 - ✅ Works with serverless deployments
