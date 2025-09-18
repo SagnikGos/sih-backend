@@ -3,7 +3,7 @@ import NodeGeocoder from 'node-geocoder';
 // Configure the geocoder
 const options = {
   provider: 'openstreetmap' as const,
-  userAgent: 'SIH-Backend/1.0 (sih-backend@example.com)', // Replace with your app info
+  userAgent: 'SIH-Backend/1.0 (Smart India Hackathon Project; https://github.com/SagnikGos/sih-backend; sagnik.gos@gmail.com)',
 };
 
 const geocoder = NodeGeocoder(options);
